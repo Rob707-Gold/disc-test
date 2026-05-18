@@ -68,6 +68,11 @@ function buildEmailText(payload) {
   const fullName = `${firstName} ${lastName}`.trim();
   const profileKey = cleanText(payload.profileKey, 'DISC');
   const profileName = cleanText(payload.profileName);
+  const attemptNumber = Math.max(1, Number(payload.attemptNumber) || 1);
+  const attemptLabel = cleanText(
+    payload.attemptLabel,
+    attemptNumber === 1 ? 'Test #1' : `Test #${attemptNumber} (retake)`
+  );
   const scores = normaliseScores(payload.scores);
   const answers = Array.isArray(payload.answers) ? payload.answers.slice(0, MAX_ANSWERS) : [];
   const submittedAt = cleanText(payload.submittedAt, new Date().toISOString());
@@ -78,6 +83,7 @@ NEW DISC ASSESSMENT SUBMISSION
 =======================================
 
 Name: ${fullName}
+Submission: ${attemptLabel}
 Profile: ${profileKey}${profileName ? ` - ${profileName}` : ''}
 Submitted: ${submittedAt}
 Source URL: ${pageUrl}
@@ -154,24 +160,23 @@ async function getAccessToken() {
   return json.access_token;
 }
 
-async function sendViaGmail({ to, subject, text }) {
-  const accessToken = await getAccessToken();
-  const raw = toBase64Url(buildMimeMessage({ to, subject, text }));
-  const response = await fetch(`${GMAIL_API}/messages/send`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ raw }),
-  });
+async function countPriorSubmissions(accessToken, firstName, lastName) {
+  const query = `to:${RESULT_RECIPIENT} subject:"DISC Result: ${firstName} ${lastName}"`;
+  const response = await fetch(
+    `${GMAIL_API}/messages?q=${encodeURIComponent(query)}&maxResults=50`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  );
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Gmail send failed: ${response.status} ${errorText.slice(0, 250)}`);
+    console.warn(`Gmail prior-submission search failed: ${response.status} ${errorText.slice(0, 250)}`);
+    return 0;
   }
 
-  return response.json();
+  const json = await response.json();
+  return Number(json.resultSizeEstimate) || (json.messages || []).length || 0;
 }
 
 module.exports = async function handler(req, res) {
@@ -195,15 +200,36 @@ module.exports = async function handler(req, res) {
     }
 
     const profileKey = cleanText(payload.profileKey, 'DISC');
+    const accessToken = await getAccessToken();
+    const clientAttemptNumber = Math.max(1, Number(payload.attemptNumber) || 1);
+    const priorSubmissions = await countPriorSubmissions(accessToken, firstName, lastName);
+    const attemptNumber = Math.max(clientAttemptNumber, priorSubmissions + 1);
+    payload.attemptNumber = attemptNumber;
+    payload.attemptLabel = attemptNumber === 1 ? 'Test #1' : `Test #${attemptNumber} (retake)`;
     const emailText = buildEmailText(payload);
+    const raw = toBase64Url(
+      buildMimeMessage({
+        to: RESULT_RECIPIENT,
+        subject: `DISC Result: ${firstName} ${lastName} - ${profileKey} - ${payload.attemptLabel}`,
+        text: emailText,
+      })
+    );
 
-    await sendViaGmail({
-      to: RESULT_RECIPIENT,
-      subject: `DISC Result: ${firstName} ${lastName} - ${profileKey}`,
-      text: emailText,
+    const sendResponse = await fetch(`${GMAIL_API}/messages/send`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ raw }),
     });
 
-    return res.status(200).json({ ok: true });
+    if (!sendResponse.ok) {
+      const errorText = await sendResponse.text();
+      throw new Error(`Gmail send failed: ${sendResponse.status} ${errorText.slice(0, 250)}`);
+    }
+
+    return res.status(200).json({ ok: true, attemptNumber, attemptLabel: payload.attemptLabel });
   } catch (error) {
     console.error('DISC submit error:', error);
     return res.status(500).json({ ok: false, error: 'Could not email DISC result' });

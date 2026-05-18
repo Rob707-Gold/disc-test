@@ -7,8 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#2C3E50">
-<title>DISC Personality Assessment</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232C3E50'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='24' font-family='Arial,sans-serif' font-weight='700' fill='white'%3ED%3C/text%3E%3C/svg%3E">
+<title>Personality Assessment</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232C3E50'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='24' font-family='Arial,sans-serif' font-weight='700' fill='white'%3EP%3C/text%3E%3C/svg%3E">
 <style>
   :root {
     --d-color: #E74C3C;
@@ -54,22 +54,6 @@
     color: var(--text-light);
     font-size: 14px;
   }
-  .disc-badge {
-    display: inline-flex;
-    gap: 6px;
-    margin: 14px 0;
-  }
-  .disc-badge span {
-    width: 34px; height: 34px;
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 15px; color: white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  }
-  .disc-badge .d { background: var(--d-color); }
-  .disc-badge .i { background: var(--i-color); }
-  .disc-badge .s { background: var(--s-color); }
-  .disc-badge .c { background: var(--c-color); }
   .progress-wrap {
     margin-bottom: 20px;
     position: sticky;
@@ -193,17 +177,6 @@
     border-color: var(--c-color);
     background: rgba(41,128,185,0.06);
   }
-  .rank-item .letter {
-    width: 30px; height: 30px;
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 13px; color: white;
-    flex-shrink: 0;
-  }
-  .rank-item .letter.d { background: var(--d-color); }
-  .rank-item .letter.i { background: var(--i-color); }
-  .rank-item .letter.s { background: var(--s-color); }
-  .rank-item .letter.c { background: var(--c-color); }
   .rank-item .text {
     flex: 1;
     font-size: 15px;
@@ -431,21 +404,15 @@
 
 <div class="container">
   <div class="header">
-    <div class="disc-badge">
-      <span class="d">D</span>
-      <span class="i">I</span>
-      <span class="s">S</span>
-      <span class="c">C</span>
-    </div>
     <h1>Personality Profile</h1>
     <p>20 questions · 3 minutes · Instant results</p>
   </div>
 
   <div id="intro" class="card intro-card fade-in">
     <h2>Discover Your Behavioral Style</h2>
-    <p>The DISC assessment measures how you approach problems, interact with others, respond to pace, and follow rules. There are no right or wrong answers—just be honest.</p>
+    <p>This assessment measures how you approach problems, interact with others, respond to pace, and follow rules. There are no right or wrong answers—just be honest.</p>
     <div class="features">
-      <div class="feature"><strong>📊 4 Traits</strong>Dominance, Influence, Steadiness, Conscientiousness</div>
+      <div class="feature"><strong>📊 4 Traits</strong>Four behavioural dimensions scored after completion</div>
       <div class="feature"><strong>⚡ Instant</strong>Get your full profile immediately upon completion</div>
       <div class="feature"><strong>📱 Mobile-First</strong>Designed for quick completion on any phone</div>
       <div class="feature"><strong>🔒 Direct</strong>Results are emailed to MCA after completion</div>
@@ -476,7 +443,7 @@
 
   <div id="questions"></div>
   <div id="results" class="hidden"></div>
-  <div class="footer">Powered by DISC Assessment Engine</div>
+  <div class="footer">Powered by Personality Assessment Engine</div>
 </div>
 
 <script>
@@ -641,8 +608,10 @@ const traitLabels = { d: 'Dominance', i: 'Influence', s: 'Steadiness', c: 'Consc
 let currentQ = 0;
 let answers = [];
 let currentRanks = {};
+let currentOrder = [];
 let currentStep = 0;
 let userName = { first: '', last: '' };
+const RETAKE_STORAGE_KEY = 'mca_personality_submission_counts_v1';
 
 function showNameForm() {
   document.getElementById('intro').classList.add('hidden');
@@ -669,6 +638,7 @@ function renderQuestion(idx) {
   const container = document.getElementById('questions');
   const q = questions[idx];
   currentRanks = {};
+  currentOrder = [];
   currentStep = 0;
 
   const card = document.createElement('div');
@@ -676,10 +646,10 @@ function renderQuestion(idx) {
   card.id = 'q-card';
 
   let itemsHtml = '';
-  q.items.forEach((item, i) => {
+  const items = shuffleItems(q.items);
+  items.forEach((item, i) => {
     itemsHtml += `
       <div class="rank-item" id="item-${i}" onclick="rankItem(${i}, '${item.l}')">
-        <div class="letter ${item.l}">${item.l.toUpperCase()}</div>
         <div class="text">${item.t}</div>
         <div class="rank-box" id="rank-${i}">—</div>
       </div>
@@ -689,7 +659,7 @@ function renderQuestion(idx) {
   card.innerHTML = `
     <div class="question-num">Question ${idx + 1} of 20</div>
     <div class="question-text">${q.q}</div>
-    <div class="instruction">Tap each statement in order: <strong>4 = Most like me</strong> down to <strong>1 = Least like me</strong></div>
+    <div class="instruction">Tap each statement in order: <strong>4 = Most like me</strong> down to <strong>1 = Least like me</strong>. Tap again to clear.</div>
     <div class="rank-list">${itemsHtml}</div>
     <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" disabled>Next Question</button>
   `;
@@ -700,18 +670,40 @@ function renderQuestion(idx) {
 }
 
 function rankItem(index, letter) {
-  if (currentRanks[index] !== undefined) return;
-  currentStep++;
-  currentRanks[index] = { rank: 4 - currentStep + 1, letter };
-
-  const item = document.getElementById(`item-${index}`);
-  const box = document.getElementById(`rank-${index}`);
-  item.classList.add('ranked', 'selected');
-  box.textContent = currentRanks[index].rank;
-
-  if (currentStep === 4) {
-    document.getElementById('nextBtn').disabled = false;
+  if (currentRanks[index] !== undefined) {
+    delete currentRanks[index];
+    currentOrder = currentOrder.filter(i => i !== index);
+  } else if (currentOrder.length < questions[currentQ].items.length) {
+    currentRanks[index] = { rank: 0, letter };
+    currentOrder.push(index);
   }
+
+  refreshRankDisplay();
+}
+
+function refreshRankDisplay() {
+  currentStep = currentOrder.length;
+
+  questions[currentQ].items.forEach((_, index) => {
+    const item = document.getElementById(`item-${index}`);
+    const box = document.getElementById(`rank-${index}`);
+    const orderIndex = currentOrder.indexOf(index);
+
+    if (!item || !box) return;
+
+    if (orderIndex === -1) {
+      item.classList.remove('ranked', 'selected');
+      box.textContent = '—';
+      return;
+    }
+
+    const rank = questions[currentQ].items.length - orderIndex;
+    currentRanks[index].rank = rank;
+    item.classList.add('ranked', 'selected');
+    box.textContent = rank;
+  });
+
+  document.getElementById('nextBtn').disabled = currentStep !== questions[currentQ].items.length;
 }
 
 function nextQuestion() {
@@ -740,6 +732,43 @@ function updateProgress(idx) {
   const pct = ((idx) / questions.length) * 100;
   document.getElementById('progressFill').style.width = pct + '%';
   document.getElementById('progressText').textContent = `Question ${idx + 1} of ${questions.length}`;
+}
+
+function shuffleItems(items) {
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+function getSubmissionKey() {
+  return `${userName.first}|${userName.last}`.trim().toLowerCase();
+}
+
+function readSubmissionCounts() {
+  try {
+    return JSON.parse(localStorage.getItem(RETAKE_STORAGE_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function getAttemptNumber() {
+  const counts = readSubmissionCounts();
+  return (Number(counts[getSubmissionKey()]) || 0) + 1;
+}
+
+function markSubmissionSent(attemptNumber) {
+  try {
+    const key = getSubmissionKey();
+    const counts = readSubmissionCounts();
+    counts[key] = Math.max(Number(counts[key]) || 0, attemptNumber);
+    localStorage.setItem(RETAKE_STORAGE_KEY, JSON.stringify(counts));
+  } catch {
+    // Retake labels are best-effort if browser storage is unavailable.
+  }
 }
 
 function showResults() {
@@ -889,12 +918,15 @@ function showResults() {
 async function submitResultsViaEmail(profileKey, profileName, scores, sorted) {
   const statusDiv = document.getElementById('submitStatus');
   statusDiv.innerHTML = '<div class="status-msg status-pending"><span class="spinner"></span>Sending results...</div>';
+  const attemptNumber = getAttemptNumber();
+  const attemptLabel = attemptNumber === 1 ? 'Test #1' : `Test #${attemptNumber} (retake)`;
 
   const emailBody = `
 NEW DISC ASSESSMENT SUBMISSION
 ═══════════════════════════════════════
 
 Name: ${userName.first} ${userName.last}
+Submission: ${attemptLabel}
 Profile: ${profileKey} — ${profileName}
 Date: ${new Date().toLocaleString()}
 
@@ -921,6 +953,8 @@ ${answers.map((a, i) => `Q${i+1}: ${JSON.stringify(a)}`).join('\n')}
     scores,
     primary: sorted[0][0].toUpperCase(),
     secondary: sorted[1][0].toUpperCase(),
+    attemptNumber,
+    attemptLabel,
     answers,
     message: emailBody,
     submittedAt: new Date().toISOString(),
@@ -938,6 +972,7 @@ ${answers.map((a, i) => `Q${i+1}: ${JSON.stringify(a)}`).join('\n')}
     if (!response.ok || !result.ok) {
       throw new Error(result.error || `HTTP ${response.status}`);
     }
+    markSubmissionSent(attemptNumber);
     statusDiv.innerHTML = `<div class="status-msg status-success">✓ Results emailed to ${RECIPIENT_EMAIL}</div>`;
   } catch (err) {
     console.error('DISC result email error:', err);
