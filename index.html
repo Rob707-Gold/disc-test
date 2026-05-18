@@ -480,7 +480,9 @@
 </div>
 
 <script>
-const RESULTS_ENDPOINT = '/api/submit';
+const RESULTS_ENDPOINT = window.location.hostname.endsWith('github.io')
+  ? 'https://disc-test-rosy.vercel.app/api/submit'
+  : '/api/submit';
 const RECIPIENT_EMAIL = 'Joshua@themcagroup.com.au';
 
 const questions = [
