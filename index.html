@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#2C3E50">
+<title>DISC Personality Assessment</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232C3E50'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-size='24' font-family='Arial,sans-serif' font-weight='700' fill='white'%3ED%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --d-color: #E74C3C;
+    --i-color: #F39C12;
+    --s-color: #27AE60;
+    --c-color: #2980B9;
+    --bg: #F8F9FA;
+    --card: #FFFFFF;
+    --text: #2C3E50;
+    --text-light: #7F8C8D;
+    --border: #E9ECEF;
+    --shadow: 0 4px 24px rgba(0,0,0,0.08);
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior-y: none;
+  }
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 16px;
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+  .header {
+    text-align: center;
+    padding: 24px 0 16px;
+  }
+  .header h1 {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+  }
+  .header p {
+    color: var(--text-light);
+    font-size: 14px;
+  }
+  .disc-badge {
+    display: inline-flex;
+    gap: 6px;
+    margin: 14px 0;
+  }
+  .disc-badge span {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 15px; color: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .disc-badge .d { background: var(--d-color); }
+  .disc-badge .i { background: var(--i-color); }
+  .disc-badge .s { background: var(--s-color); }
+  .disc-badge .c { background: var(--c-color); }
+  .progress-wrap {
+    margin-bottom: 20px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    padding: 8px 0;
+  }
+  .progress-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--d-color), var(--i-color), var(--s-color), var(--c-color));
+    border-radius: 3px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+  .progress-text {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 6px;
+    font-weight: 600;
+  }
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    margin-bottom: 14px;
+    transition: transform 0.2s, opacity 0.3s;
+  }
+  .card.hidden { display: none; }
+  .card.fade-out { opacity: 0; transform: translateX(-20px); }
+  .card.fade-in { animation: fadeIn 0.35s ease both; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .question-num {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--text-light);
+    margin-bottom: 4px;
+  }
+  .question-text {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    line-height: 1.35;
+  }
+  .instruction {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    background: var(--bg);
+    border-radius: 10px;
+    border-left: 3px solid var(--c-color);
+    line-height: 1.5;
+  }
+  .form-group {
+    margin-bottom: 16px;
+  }
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .form-group input {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 16px;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    background: white;
+    color: var(--text);
+    font-family: inherit;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+  .form-group input:focus {
+    outline: none;
+    border-color: var(--c-color);
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .rank-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .rank-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--bg);
+    border-radius: 12px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+    min-height: 56px;
+  }
+  .rank-item:active { transform: scale(0.97); }
+  .rank-item.selected {
+    border-color: var(--c-color);
+    background: rgba(41,128,185,0.06);
+  }
+  .rank-item .letter {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 13px; color: white;
+    flex-shrink: 0;
+  }
+  .rank-item .letter.d { background: var(--d-color); }
+  .rank-item .letter.i { background: var(--i-color); }
+  .rank-item .letter.s { background: var(--s-color); }
+  .rank-item .letter.c { background: var(--c-color); }
+  .rank-item .text {
+    flex: 1;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  .rank-item .rank-box {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 15px;
+    color: var(--text-light);
+    background: white;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .rank-item.ranked .rank-box {
+    border-color: var(--c-color);
+    color: var(--c-color);
+    background: rgba(41,128,185,0.08);
+  }
+  .btn {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 12px;
+    -webkit-appearance: none;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #2C3E50, #34495E);
+    color: white;
+    box-shadow: 0 4px 16px rgba(44,62,80,0.25);
+  }
+  .btn-primary:active { transform: translateY(1px); }
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .btn-outline {
+    background: white;
+    color: var(--text);
+    border: 2px solid var(--border);
+  }
+  .intro-card {
+    text-align: center;
+    padding: 32px 20px;
+  }
+  .intro-card h2 {
+    font-size: 20px;
+    margin-bottom: 10px;
+    line-height: 1.3;
+  }
+  .intro-card p {
+    color: var(--text-light);
+    font-size: 14px;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+  .features {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+    text-align: left;
+  }
+  .feature {
+    background: var(--bg);
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .feature strong {
+    display: block;
+    font-size: 13px;
+    margin-bottom: 3px;
+  }
+  .results-hero {
+    text-align: center;
+    padding: 24px 0;
+  }
+  .profile-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #2C3E50, #34495E);
+    color: white;
+    padding: 14px 28px;
+    border-radius: 14px;
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+  }
+  .profile-name {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .profile-sub {
+    color: var(--text-light);
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 0 10px;
+  }
+  .score-card {
+    margin-bottom: 10px;
+  }
+  .score-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .score-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 14px;
+  }
+  .score-label .dot {
+    width: 10px; height: 10px;
+    border-radius: 3px;
+  }
+  .score-value {
+    font-weight: 800;
+    font-size: 16px;
+  }
+  .score-bar-wrap {
+    height: 8px;
+    background: var(--bg);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .score-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease;
+  }
+  .traits-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .trait-box {
+    padding: 14px;
+    border-radius: 10px;
+    text-align: center;
+  }
+  .trait-box h4 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    opacity: 0.85;
+  }
+  .trait-box ul {
+    list-style: none;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .status-msg {
+    text-align: center;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+  .status-success {
+    background: rgba(39,174,96,0.1);
+    color: var(--s-color);
+    border: 1px solid rgba(39,174,96,0.2);
+  }
+  .status-error {
+    background: rgba(231,76,60,0.1);
+    color: var(--d-color);
+    border: 1px solid rgba(231,76,60,0.2);
+  }
+  .status-pending {
+    background: rgba(243,156,18,0.1);
+    color: var(--i-color);
+    border: 1px solid rgba(243,156,18,0.2);
+  }
+  .footer {
+    text-align: center;
+    padding: 24px 0 32px;
+    color: var(--text-light);
+    font-size: 11px;
+  }
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-width: 480px) {
+    .container { padding: 12px; }
+    .header h1 { font-size: 22px; }
+    .question-text { font-size: 16px; }
+    .rank-item { padding: 14px 12px; }
+    .rank-item .text { font-size: 14px; }
+    .btn { padding: 18px; font-size: 17px; }
+    .form-row { gap: 8px; }
+  }
+</style>
+<base target="_blank">
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div class="disc-badge">
+      <span class="d">D</span>
+      <span class="i">I</span>
+      <span class="s">S</span>
+      <span class="c">C</span>
+    </div>
+    <h1>Personality Profile</h1>
+    <p>20 questions · 3 minutes · Instant results</p>
+  </div>
+
+  <div id="intro" class="card intro-card fade-in">
+    <h2>Discover Your Behavioral Style</h2>
+    <p>The DISC assessment measures how you approach problems, interact with others, respond to pace, and follow rules. There are no right or wrong answers—just be honest.</p>
+    <div class="features">
+      <div class="feature"><strong>📊 4 Traits</strong>Dominance, Influence, Steadiness, Conscientiousness</div>
+      <div class="feature"><strong>⚡ Instant</strong>Get your full profile immediately upon completion</div>
+      <div class="feature"><strong>📱 Mobile-First</strong>Designed for quick completion on any phone</div>
+      <div class="feature"><strong>🔒 Direct</strong>Results are emailed to MCA after completion</div>
+    </div>
+    <button class="btn btn-primary" onclick="showNameForm()">Start Assessment</button>
+  </div>
+
+  <div id="nameForm" class="card hidden">
+    <div class="question-text" style="margin-bottom: 8px;">Let's get started</div>
+    <p style="color: var(--text-light); font-size: 14px; margin-bottom: 20px;">Enter your name so we can personalize your results.</p>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="firstName">First Name</label>
+        <input type="text" id="firstName" placeholder="Jane" autocomplete="given-name">
+      </div>
+      <div class="form-group">
+        <label for="lastName">Last Name</label>
+        <input type="text" id="lastName" placeholder="Doe" autocomplete="family-name">
+      </div>
+    </div>
+    <button class="btn btn-primary" id="nameBtn" onclick="startTest()">Continue to Questions</button>
+  </div>
+
+  <div id="progressWrap" class="progress-wrap hidden">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-text" id="progressText">Question 1 of 20</div>
+  </div>
+
+  <div id="questions"></div>
+  <div id="results" class="hidden"></div>
+  <div class="footer">Powered by DISC Assessment Engine</div>
+</div>
+
+<script>
+const RESULTS_ENDPOINT = '/api/submit';
+const RECIPIENT_EMAIL = 'Joshua@themcagroup.com.au';
+
+const questions = [
+  { q: "At work, I am most motivated by...",
+    items: [
+      {t:"Winning, results, and overcoming challenges", l:"d"},
+      {t:"Persuading others and building enthusiasm", l:"i"},
+      {t:"Steady routines and supporting the team", l:"s"},
+      {t:"Accuracy, details, and logical analysis", l:"c"}
+    ]},
+  { q: "Under pressure, I tend to...",
+    items: [
+      {t:"Become more competitive and decisive", l:"d"},
+      {t:"Talk more and seek social connection", l:"i"},
+      {t:"Withdraw and need time to process", l:"s"},
+      {t:"Double down on rules, standards, and caution", l:"c"}
+    ]},
+  { q: "My communication style is...",
+    items: [
+      {t:"Direct, brief, and to the point", l:"d"},
+      {t:"Animated, storytelling, and engaging", l:"i"},
+      {t:"Warm, patient, and a good listener", l:"s"},
+      {t:"Precise, structured, and carefully worded", l:"c"}
+    ]},
+  { q: "When making decisions, I rely on...",
+    items: [
+      {t:"Gut instinct and desired outcomes", l:"d"},
+      {t:"What feels right for people involved", l:"i"},
+      {t:"Stability and minimal disruption", l:"s"},
+      {t:"Data, facts, and proven methods", l:"c"}
+    ]},
+  { q: "When conflict arises, I...",
+    items: [
+      {t:"Confront it head-on to resolve quickly", l:"d"},
+      {t:"Smooth it over and find common ground", l:"i"},
+      {t:"Avoid confrontation to keep peace", l:"s"},
+      {t:"Analyze the root cause objectively", l:"c"}
+    ]},
+  { q: "What drives me most is...",
+    items: [
+      {t:"Achievement, control, and winning", l:"d"},
+      {t:"Recognition, popularity, and fun", l:"i"},
+      {t:"Security, loyalty, and being helpful", l:"s"},
+      {t:"Quality, expertise, and being right", l:"c"}
+    ]},
+  { q: "As a leader, I am...",
+    items: [
+      {t:"Commanding — I take charge and expect results", l:"d"},
+      {t:"Inspiring — I rally people around a vision", l:"i"},
+      {t:"Supportive — I lead by serving and stabilizing", l:"s"},
+      {t:"Analytical — I lead through systems and standards", l:"c"}
+    ]},
+  { q: "My preferred pace is...",
+    items: [
+      {t:"Fast and urgent — keep things moving", l:"d"},
+      {t:"Spontaneous and flexible — go with the flow", l:"i"},
+      {t:"Slow and deliberate — don't rush me", l:"s"},
+      {t:"Methodical and planned — follow a schedule", l:"c"}
+    ]},
+  { q: "When it comes to rules, I...",
+    items: [
+      {t:"Bend them if they block progress", l:"d"},
+      {t:"Bend them if they limit people's happiness", l:"i"},
+      {t:"Follow them to maintain harmony", l:"s"},
+      {t:"Follow and enforce them strictly", l:"c"}
+    ]},
+  { q: "In social settings, I...",
+    items: [
+      {t:"Take charge of the group or activity", l:"d"},
+      {t:"Am the life of the party, meeting everyone", l:"i"},
+      {t:"Stick with people I know, offering support", l:"s"},
+      {t:"Observe and analyze the dynamics", l:"c"}
+    ]},
+  { q: "When I receive criticism, I...",
+    items: [
+      {t:"Dismiss it if it slows me down", l:"d"},
+      {t:"Feel hurt but hide it with humor", l:"i"},
+      {t:"Take it personally and brood on it", l:"s"},
+      {t:"Analyze whether it's valid and factual", l:"c"}
+    ]},
+  { q: "My goals are typically...",
+    items: [
+      {t:"Ambitious, challenging, and results-focused", l:"d"},
+      {t:"Social, collaborative, and experience-focused", l:"i"},
+      {t:"Realistic, team-oriented, and service-focused", l:"s"},
+      {t:"Specific, measurable, and quality-focused", l:"c"}
+    ]},
+  { q: "When faced with change, I...",
+    items: [
+      {t:"Drive it and see it as opportunity", l:"d"},
+      {t:"Embrace it if it's exciting", l:"i"},
+      {t:"Resist it and prefer the familiar", l:"s"},
+      {t:"Evaluate it against proven standards", l:"c"}
+    ]},
+  { q: "When solving problems, I...",
+    items: [
+      {t:"Act quickly, even with limited info", l:"d"},
+      {t:"Brainstorm with others for creative solutions", l:"i"},
+      {t:"Seek consensus and steady progress", l:"s"},
+      {t:"Research thoroughly before acting", l:"c"}
+    ]},
+  { q: "I want to be recognized for...",
+    items: [
+      {t:"Results and the power I've earned", l:"d"},
+      {t:"Applause and being well-liked", l:"i"},
+      {t:"Appreciation for my loyalty", l:"s"},
+      {t:"Respect for my expertise", l:"c"}
+    ]},
+  { q: "On a team, my natural role is...",
+    items: [
+      {t:"The driver who pushes for outcomes", l:"d"},
+      {t:"The promoter who energizes the team", l:"i"},
+      {t:"The supporter who keeps things stable", l:"s"},
+      {t:"The analyst who ensures quality", l:"c"}
+    ]},
+  { q: "When it comes to risk, I...",
+    items: [
+      {t:"Take big risks for big rewards", l:"d"},
+      {t:"Take social risks, not financial ones", l:"i"},
+      {t:"Avoid risk and protect what I have", l:"s"},
+      {t:"Calculate risk meticulously before acting", l:"c"}
+    ]},
+  { q: "In written messages, I am...",
+    items: [
+      {t:"Brief with bullet points and action items", l:"d"},
+      {t:"Friendly with emojis and exclamation points", l:"i"},
+      {t:"Warm, thoughtful, and I check in on people", l:"s"},
+      {t:"Formal, structured, and error-free", l:"c"}
+    ]},
+  { q: "My ideal work environment is...",
+    items: [
+      {t:"Competitive, autonomous, and high-stakes", l:"d"},
+      {t:"Social, creative, flexible, and fun", l:"i"},
+      {t:"Supportive, predictable, and team-based", l:"s"},
+      {t:"Organized, quiet, detail-oriented, and structured", l:"c"}
+    ]},
+  { q: "My biggest fear is...",
+    items: [
+      {t:"Being taken advantage of or losing control", l:"d"},
+      {t:"Being ignored or rejected socially", l:"i"},
+      {t:"Sudden change or instability", l:"s"},
+      {t:"Being wrong or criticized for mistakes", l:"c"}
+    ]}
+];
+
+const profileNames = {
+  "D": "The Driver", "I": "The Influencer", "S": "The Supporter", "C": "The Analyst",
+  "DI": "The Initiator", "ID": "The Persuader", "DS": "The Achiever", "SD": "The Specialist",
+  "DC": "The Challenger", "CD": "The Perfectionist", "IS": "The Connector", "SI": "The Relater",
+  "IC": "The Observer", "CI": "The Advisor", "SC": "The Planner", "CS": "The Coordinator"
+};
+
+const traitColors = { d: '#E74C3C', i: '#F39C12', s: '#27AE60', c: '#2980B9' };
+const traitLabels = { d: 'Dominance', i: 'Influence', s: 'Steadiness', c: 'Conscientiousness' };
+
+let currentQ = 0;
+let answers = [];
+let currentRanks = {};
+let currentStep = 0;
+let userName = { first: '', last: '' };
+
+function showNameForm() {
+  document.getElementById('intro').classList.add('hidden');
+  const form = document.getElementById('nameForm');
+  form.classList.remove('hidden');
+  form.classList.add('fade-in');
+  setTimeout(() => document.getElementById('firstName').focus(), 300);
+}
+
+function startTest() {
+  const first = document.getElementById('firstName').value.trim();
+  const last = document.getElementById('lastName').value.trim();
+  if (!first || !last) {
+    alert('Please enter both your first and last name.');
+    return;
+  }
+  userName = { first, last };
+  document.getElementById('nameForm').classList.add('hidden');
+  document.getElementById('progressWrap').classList.remove('hidden');
+  renderQuestion(0);
+}
+
+function renderQuestion(idx) {
+  const container = document.getElementById('questions');
+  const q = questions[idx];
+  currentRanks = {};
+  currentStep = 0;
+
+  const card = document.createElement('div');
+  card.className = 'card fade-in';
+  card.id = 'q-card';
+
+  let itemsHtml = '';
+  q.items.forEach((item, i) => {
+    itemsHtml += `
+      <div class="rank-item" id="item-${i}" onclick="rankItem(${i}, '${item.l}')">
+        <div class="letter ${item.l}">${item.l.toUpperCase()}</div>
+        <div class="text">${item.t}</div>
+        <div class="rank-box" id="rank-${i}">—</div>
+      </div>
+    `;
+  });
+
+  card.innerHTML = `
+    <div class="question-num">Question ${idx + 1} of 20</div>
+    <div class="question-text">${q.q}</div>
+    <div class="instruction">Tap each statement in order: <strong>4 = Most like me</strong> down to <strong>1 = Least like me</strong></div>
+    <div class="rank-list">${itemsHtml}</div>
+    <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" disabled>Next Question</button>
+  `;
+
+  container.innerHTML = '';
+  container.appendChild(card);
+  updateProgress(idx);
+}
+
+function rankItem(index, letter) {
+  if (currentRanks[index] !== undefined) return;
+  currentStep++;
+  currentRanks[index] = { rank: 4 - currentStep + 1, letter };
+
+  const item = document.getElementById(`item-${index}`);
+  const box = document.getElementById(`rank-${index}`);
+  item.classList.add('ranked', 'selected');
+  box.textContent = currentRanks[index].rank;
+
+  if (currentStep === 4) {
+    document.getElementById('nextBtn').disabled = false;
+  }
+}
+
+function nextQuestion() {
+  const q = questions[currentQ];
+  const rankMap = {};
+  Object.keys(currentRanks).forEach(k => {
+    const {rank, letter} = currentRanks[k];
+    rankMap[letter] = rank;
+  });
+  answers.push(rankMap);
+
+  const card = document.getElementById('q-card');
+  card.classList.add('fade-out');
+
+  setTimeout(() => {
+    currentQ++;
+    if (currentQ < questions.length) {
+      renderQuestion(currentQ);
+    } else {
+      showResults();
+    }
+  }, 300);
+}
+
+function updateProgress(idx) {
+  const pct = ((idx) / questions.length) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `Question ${idx + 1} of ${questions.length}`;
+}
+
+function showResults() {
+  document.getElementById('progressWrap').classList.add('hidden');
+  document.getElementById('questions').innerHTML = '';
+
+  const scores = { d:0, i:0, s:0, c:0 };
+  answers.forEach(a => {
+    Object.keys(a).forEach(k => scores[k] += a[k]);
+  });
+
+  const sorted = Object.entries(scores).sort((a,b) => b[1] - a[1]);
+  const primary = sorted[0][0].toUpperCase();
+  const secondary = sorted[1][1] > 0 ? sorted[1][0].toUpperCase() : '';
+  const profileKey = secondary ? primary + secondary : primary;
+  const profileName = profileNames[profileKey] || profileNames[primary] || 'The Individualist';
+
+  const maxScore = 80;
+
+  let scoresHtml = '';
+  sorted.forEach(([k, v]) => {
+    const color = traitColors[k];
+    scoresHtml += `
+      <div class="score-card">
+        <div class="score-header">
+          <div class="score-label">
+            <div class="dot" style="background:${color}"></div>
+            ${traitLabels[k]}
+          </div>
+          <div class="score-value" style="color:${color}">${v}</div>
+        </div>
+        <div class="score-bar-wrap">
+          <div class="score-bar-fill" style="width:0%; background:${color}" id="bar-${k}"></div>
+        </div>
+      </div>
+    `;
+  });
+
+  const descriptions = {
+    "D": "You are results-driven, competitive, and direct. You thrive on challenges and take charge naturally.",
+    "I": "You are enthusiastic, persuasive, and people-oriented. You energize others and build relationships easily.",
+    "S": "You are patient, loyal, and supportive. You value stability and are a reliable team player.",
+    "C": "You are analytical, detail-focused, and systematic. You prioritize accuracy and logical processes.",
+    "DI": "You combine drive with charm. You push for results while bringing people along for the ride.",
+    "ID": "You are a persuasive go-getter. You inspire action and build momentum through relationships.",
+    "DS": "You are a determined achiever who values steady progress toward ambitious goals.",
+    "SD": "You are a steady specialist who delivers consistent, high-quality results over time.",
+    "DC": "You challenge the status quo with facts. You push for excellence through precision.",
+    "CD": "You are a perfectionist who demands high standards and systematic improvement.",
+    "IS": "You connect people and create harmony. You build bridges and maintain relationships.",
+    "SI": "You relate to others with warmth and patience. You are the glue that holds teams together.",
+    "IC": "You observe social dynamics with insight. You communicate with both heart and mind.",
+    "CI": "You advise with careful analysis and clear communication. You are a trusted counselor.",
+    "SC": "You plan carefully and execute methodically. You bring order to collaborative efforts.",
+    "CS": "You coordinate details while supporting the team. You ensure nothing falls through cracks."
+  };
+
+  const strengths = {
+    d: ["Decisive", "Results-oriented", "Takes initiative", "Handles pressure well"],
+    i: ["Enthusiastic", "Builds rapport", "Optimistic", "Strong communicator"],
+    s: ["Patient", "Loyal", "Good listener", "Team player"],
+    c: ["Analytical", "Detail-oriented", "Systematic", "Quality-focused"]
+  };
+
+  const watchouts = {
+    d: ["Impatience with process", "May overlook feelings", "Can appear demanding"],
+    i: ["May lack follow-through", "Can be impulsive", "May avoid details"],
+    s: ["Resists change", "Avoids conflict", "May be too accommodating"],
+    c: ["Overly critical", "Analysis paralysis", "May seem detached"]
+  };
+
+  const primaryKey = sorted[0][0];
+  const secondaryKey = sorted[1][0];
+
+  let strengthsHtml = '';
+  strengths[primaryKey].forEach(s => strengthsHtml += `<li>${s}</li>`);
+  if (secondaryKey && strengths[secondaryKey]) {
+    strengths[secondaryKey].slice(0,2).forEach(s => strengthsHtml += `<li>${s}</li>`);
+  }
+
+  let watchHtml = '';
+  watchouts[primaryKey].forEach(w => watchHtml += `<li>${w}</li>`);
+
+  const resultsDiv = document.getElementById('results');
+  resultsDiv.classList.remove('hidden');
+  resultsDiv.innerHTML = `
+    <div class="card results-hero">
+      <div style="font-size:14px; color:var(--text-light); margin-bottom:8px;">${userName.first} ${userName.last}</div>
+      <div class="profile-badge">${profileKey}</div>
+      <div class="profile-name">${profileName}</div>
+      <div class="profile-sub">${descriptions[profileKey] || descriptions[primary]}</div>
+    </div>
+
+    <div id="submitStatus"></div>
+
+    <div class="card">
+      <div class="question-text" style="font-size:16px; margin-bottom:14px;">Your Scores</div>
+      ${scoresHtml}
+    </div>
+
+    <div class="card">
+      <div class="question-text" style="font-size:16px; margin-bottom:14px;">Strengths</div>
+      <ul style="list-style:none; font-size:15px; line-height:2;">${strengthsHtml}</ul>
+    </div>
+
+    <div class="card">
+      <div class="question-text" style="font-size:16px; margin-bottom:14px;">Growth Areas</div>
+      <ul style="list-style:none; font-size:15px; line-height:2;">${watchHtml}</ul>
+    </div>
+
+    <div class="card">
+      <div class="question-text" style="font-size:16px; margin-bottom:14px;">Best Fit Environments</div>
+      <div class="traits-grid">
+        <div class="trait-box" style="background:rgba(231,76,60,0.08); color:var(--d-color);">
+          <h4>Dominance</h4>
+          <ul><li>Entrepreneurship</li><li>Sales Leadership</li><li>Executive Roles</li></ul>
+        </div>
+        <div class="trait-box" style="background:rgba(243,156,18,0.08); color:var(--i-color);">
+          <h4>Influence</h4>
+          <ul><li>Marketing</li><li>Public Relations</li><li>Team Coaching</li></ul>
+        </div>
+        <div class="trait-box" style="background:rgba(39,174,96,0.08); color:var(--s-color);">
+          <h4>Steadiness</h4>
+          <ul><li>HR / People Ops</li><li>Customer Support</li><li>Healthcare</li></ul>
+        </div>
+        <div class="trait-box" style="background:rgba(41,128,185,0.08); color:var(--c-color);">
+          <h4>Conscientiousness</h4>
+          <ul><li>Engineering</li><li>Finance / Accounting</li><li>Quality Assurance</li></ul>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-outline" onclick="location.reload()">Retake Assessment</button>
+  `;
+
+  setTimeout(() => {
+    sorted.forEach(([k, v]) => {
+      const bar = document.getElementById(`bar-${k}`);
+      if (bar) bar.style.width = ((v / maxScore) * 100) + '%';
+    });
+  }, 300);
+
+  // Auto-submit the completed result to the server-side email endpoint.
+  submitResultsViaEmail(profileKey, profileName, scores, sorted);
+}
+
+async function submitResultsViaEmail(profileKey, profileName, scores, sorted) {
+  const statusDiv = document.getElementById('submitStatus');
+  statusDiv.innerHTML = '<div class="status-msg status-pending"><span class="spinner"></span>Sending results...</div>';
+
+  const emailBody = `
+NEW DISC ASSESSMENT SUBMISSION
+═══════════════════════════════════════
+
+Name: ${userName.first} ${userName.last}
+Profile: ${profileKey} — ${profileName}
+Date: ${new Date().toLocaleString()}
+
+SCORES
+─────────────────────────────────────
+Dominance (D):        ${scores.d} / 80
+Influence (I):        ${scores.i} / 80
+Steadiness (S):       ${scores.s} / 80
+Conscientiousness (C): ${scores.c} / 80
+
+Primary:   ${sorted[0][0].toUpperCase()} (${sorted[0][1]} pts)
+Secondary: ${sorted[1][0].toUpperCase()} (${sorted[1][1]} pts)
+
+RAW ANSWERS (Question → {trait:rank})
+─────────────────────────────────────
+${answers.map((a, i) => `Q${i+1}: ${JSON.stringify(a)}`).join('\n')}
+  `.trim();
+
+  const payload = {
+    firstName: userName.first,
+    lastName: userName.last,
+    profileKey,
+    profileName,
+    scores,
+    primary: sorted[0][0].toUpperCase(),
+    secondary: sorted[1][0].toUpperCase(),
+    answers,
+    message: emailBody,
+    submittedAt: new Date().toISOString(),
+    pageUrl: window.location.href,
+    userAgent: navigator.userAgent
+  };
+
+  try {
+    const response = await fetch(RESULTS_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.ok) {
+      throw new Error(result.error || `HTTP ${response.status}`);
+    }
+    statusDiv.innerHTML = `<div class="status-msg status-success">✓ Results emailed to ${RECIPIENT_EMAIL}</div>`;
+  } catch (err) {
+    console.error('DISC result email error:', err);
+    statusDiv.innerHTML = `
+      <div class="status-msg status-error">
+        ⚠ Email failed — but results are displayed above.<br>
+        <span style="font-size:12px; font-weight:400;">Error: ${err.text || err.message}</span>
+      </div>
+    `;
+  }
+}
+</script>
+</body>
+</html>
